@@ -60,6 +60,31 @@
             input[type="range"]::-webkit-slider-thumb:hover {
                 background: #3b82f6;
             }
+            
+            /* Scrollbar styling */
+            ::-webkit-scrollbar {
+                width: 8px;
+                height: 8px;
+            }
+            
+            ::-webkit-scrollbar-track {
+                background: rgba(255, 255, 255, 0.05);
+                border-radius: 4px;
+            }
+            
+            ::-webkit-scrollbar-thumb {
+                background: rgba(96, 165, 250, 0.5);
+                border-radius: 4px;
+            }
+            
+            ::-webkit-scrollbar-thumb:hover {
+                background: rgba(96, 165, 250, 0.7);
+            }
+			
+			.scroll-container {
+			  max-height: 650px;
+			  overflow-y: auto;
+			}
         }
     </style>
 </head>
@@ -76,7 +101,19 @@
             <canvas id="visualizer" class="w-full h-full"></canvas>
             
             <!-- Overlay Controls -->
-            <div class="absolute top-4 right-4 glass rounded-xl p-4 w-64">
+            <div class="flex flex-col absolute top-4 right-4 glass rounded-xl shadow-lg overflow-hidden w-60 scroll-container">
+                <div class="bg-gray-800/80 backdrop-blur px-3 py-2 flex items-center justify-between border-b border-gray-700">
+                    <h2 class="text-sm font-semibold text-white">Settings</h2>
+                    <button id="toggleSettings" class="p-1 rounded hover:bg-white/10 transition-colors">
+                        <svg id="collapseIcon" class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                        </svg>
+                        <svg id="expandIcon" class="w-4 h-4 text-gray-300 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="p-4 max-h-[600px] overflow-auto" id="settingsContainer">
                 <div class="mb-4">
                     <label class="block text-sm font-medium mb-2">Visualization Mode</label>
                     <select id="modeSelector" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -228,8 +265,9 @@
                         <input type="range" id="particleWave" min="0.5" max="2.0" step="0.1" value="1.0" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
                     </div>
                 </div>
+                </div>
                 
-                <div class="flex items-center justify-between">
+                <div class="flex items-center justify-between p-3 bg-gray-800/80 backdrop-blur border-t border-gray-700">
                     <button id="startButton" class="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg font-medium hover:opacity-90 transition-all transform hover:scale-105">
                         Start Listening
                     </button>
@@ -333,6 +371,7 @@
             
             // Setup event listeners
             setupEventListeners() {
+                document.getElementById('toggleSettings').addEventListener('click', () => this.toggleSettingsCollapse());
                 document.getElementById('startButton').addEventListener('click', () => this.toggleAudio());
                 document.getElementById('modeSelector').addEventListener('change', (e) => {
                     this.mode = e.target.value;
@@ -427,6 +466,24 @@
                     this.particleSettings.waveAmplitude = parseFloat(e.target.value);
                     document.getElementById('waveAmplitudeValue').textContent = this.particleSettings.waveAmplitude;
                 });
+            }
+            
+            // Toggle settings panel collapse/expand
+            toggleSettingsCollapse() {
+                const overlayControls = document.getElementById('overlayControls');
+                const settingsContainer = document.getElementById('settingsContainer');
+                const collapseIcon = document.getElementById('collapseIcon');
+                const expandIcon = document.getElementById('expandIcon');
+                
+                if (settingsContainer.style.display === 'none') {
+                    settingsContainer.style.display = 'block';
+                    collapseIcon.classList.remove('hidden');
+                    expandIcon.classList.add('hidden');
+                } else {
+                    settingsContainer.style.display = 'none';
+                    collapseIcon.classList.add('hidden');
+                    expandIcon.classList.remove('hidden');
+                }
             }
             
             // Update settings panel visibility based on selected mode
