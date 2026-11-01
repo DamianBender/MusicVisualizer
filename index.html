@@ -368,20 +368,13 @@
                 }
             }
             
-            // Draw particle visualization with audio-reactive particles
+            // Draw particle visualization with audio-reactive 3D wireframe sphere
             drawParticle() {
-                // Clear canvas with space-like background
-                this.ctx.fillStyle = 'rgba(2, 2, 12, 0.1)';
+                // Clear canvas with fade effect for motion blur
+                this.ctx.fillStyle = 'rgba(2, 2, 12, 0.15)';
                 this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
                 
-                // Create a subtle gradient background
-                const bgGradient = this.ctx.createLinearGradient(0, 0, this.canvas.width, this.canvas.height);
-                bgGradient.addColorStop(0, 'rgba(10, 10, 30, 0.1)');
-                bgGradient.addColorStop(1, 'rgba(5, 5, 15, 0.1)');
-                this.ctx.fillStyle = bgGradient;
-                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-                
-                // Get average audio intensity for overall effect
+                // Get frequency data for wavey effect
                 let sum = 0;
                 for (let i = 0; i < this.dataArray.length; i++) {
                     sum += this.dataArray[i];
@@ -389,100 +382,114 @@
                 const average = sum / this.dataArray.length;
                 const intensity = average / 255;
                 
-                // Draw central core that reacts to audio
+                // Base size for the sphere (medium)
                 const centerX = this.canvas.width / 2;
                 const centerY = this.canvas.height / 2;
-                const coreSize = 30 + intensity * 80;
+                let radius = 100; // Base radius, modified below
+                radius += intensity * 40; // Subtle pulse
                 
-                // Create radial gradient for core
-                const coreGradient = this.ctx.createRadialGradient(
-                    centerX, centerY, 0,
-                    centerX, centerY, coreSize
-                );
-                coreGradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
-                coreGradient.addColorStop(0.3, 'rgba(100, 200, 255, 0.7)');
-                coreGradient.addColorStop(1, 'rgba(50, 100, 255, 0.3)');
+                // Generate phi and theta values for sphere with rotation
+                const phiCount = 14; // Vertical rings
+                const thetaCount = 22; // Horizontal dots per ring
+                const points = [];
+                const rotationX = Date.now() * 0.0003; // Continuous rotation on X axis
+                const rotationY = Date.now() * 0.0002; // Continuous rotation on Y axis
                 
-                this.ctx.beginPath();
-                this.ctx.arc(centerX, centerY, coreSize, 0, Math.PI * 2);
-                this.ctx.fillStyle = coreGradient;
-                this.ctx.fill();
-                
-                // Add core glow
-                this.ctx.shadowColor = 'rgba(100, 200, 255, 0.8)';
-                this.ctx.shadowBlur = 20;
-                this.ctx.fill();
-                this.ctx.shadowBlur = 0;
-                
-                // Draw audio-reactive particles
-                const particleCount = 100 + Math.floor(intensity * 200);
-                const baseSize = 1 + intensity * 3;
-                
-                for (let i = 0; i < particleCount; i++) {
-                    // Calculate particle position based on audio data
-                    const audioIndex = Math.floor((i / particleCount) * this.bufferLength);
-                    const audioValue = this.dataArray[audioIndex] / 255;
-                    
-                    // Position particles in a circular formation around the center
-                    const angle = (i / particleCount) * Math.PI * 2 + Date.now() * 0.0002;
-                    const distance = 80 + audioValue * 200;
-					const x = centerX + Math.cos(angle) * distance;
-                    const y = centerY + Math.sin(angle) * distance;
-                    
-                    // Calculate particle size and color based on audio
-                    const size = baseSize + audioValue * 5;
-                    const hue = (Date.now() * 0.05 + i * 10) % 360;
-                    const saturation = 70 + audioValue * 30;
-                    const lightness = 60 + audioValue * 20;
-                    
-                    // Draw particle with glow effect
-                    this.ctx.beginPath();
-                    this.ctx.arc(x, y, size, 0, Math.PI * 2);
-                    
-                    const particleGradient = this.ctx.createRadialGradient(
-                        x - size/3, y - size/3, 0,
-                        x, y, size
-                    );
-                    particleGradient.addColorStop(0, `hsla(${hue}, ${saturation}%, ${lightness + 10}%, 0.9)`);
-                    particleGradient.addColorStop(1, `hsla(${hue}, ${saturation}%, ${lightness}%, 0)`);
-                    
-                    this.ctx.fillStyle = particleGradient;
-                    this.ctx.fill();
-                    
-                    // Add glow effect for louder particles
-                    if (audioValue > 0.5) {
-                        this.ctx.shadowColor = `hsla(${hue}, ${saturation}%, ${lightness}%, 0.8)`;
-                        this.ctx.shadowBlur = 10 + audioValue * 15;
-                        this.ctx.fill();
-                        this.ctx.shadowBlur = 0;
+                for (let i = 0; i < phiCount; i++) {
+                    for (let j = 0; j < thetaCount; j++) {
+                        const phi = Math.acos(-1 + (2 * i) / phiCount);
+                        const theta = (2 * Math.PI * j) / thetaCount;
+                        
+                        // Apply rotation matrices
+                        let x = radius * Math.sin(phi) * Math.cos(theta);
+                        let y = radius * Math.sin(phi) * Math.sin(theta);
+                        let z = radius * Math.cos(phi);
+                        
+                        // Rotate around Y axis
+                        const cosY = Math.cos(rotationY);
+                        const sinY = Math.sin(rotationY);
+                        let x1 = x * cosY - z * sinY;
+                        let z1 = x * sinY + z * cosY;
+                        
+                        // Rotate around X axis
+                        const cosX = Math.cos(rotationX);
+                        const sinX = Math.sin(rotationX);
+                        let y2 = y * cosX - z1 * sinX;
+                        let z2 = y * sinX + z1 * cosX;
+                        
+                        // Add frequency-based wavey displacement
+                        const freqIndex = Math.floor((j / thetaCount) * this.bufferLength);
+                        const freqValue = this.dataArray[freqIndex] / 128;
+                        const waveAmount = Math.sin(Date.now() * 0.002 + i * 0.5 + j * 0.3) * freqValue * 5;
+                        
+                        x1 += waveAmount;
+                        y2 += waveAmount * 0.5;
+                        
+                        points.push({x: x1, y: y2, z: z2});
                     }
                 }
                 
-                // Draw connecting lines between particles
-                this.ctx.strokeStyle = `rgba(100, 200, 255, ${0.1 + intensity * 0.2})`;
-                this.ctx.lineWidth = 0.5;
+                // Sort points by z-depth (back to front) for proper depth ordering
+                points.sort((a, b) => b.z - a.z);
                 
-                for (let i = 0; i < particleCount; i++) {
-                    const audioIndex = Math.floor((i / particleCount) * this.bufferLength);
-                    const audioValue = this.dataArray[audioIndex] / 255;
+                // Draw connecting lines (wireframe)
+                this.ctx.strokeStyle = `rgba(180, 200, 255, ${0.1 + intensity * 0.3})`;
+                this.ctx.lineWidth = 1;
+                
+                for (let i = 0; i < points.length - 1; i++) {
+                    const p1 = points[i];
+                    const p2 = points[i + 1];
                     
-                    if (audioValue > 0.1) { // Only connect if there's some audio
-                        const angle = (i / particleCount) * Math.PI * 2 + Date.now() * 0.0002;
-                        const distance = 80 + audioValue * 200;
-						const x1 = centerX + Math.cos(angle) * distance;
-                        const y1 = centerY + Math.sin(angle) * distance;
-                        
-                        // Connect to next particle
-                        const nextIndex = (i + 1) % particleCount;
-                        const nextAngle = (nextIndex / particleCount) * Math.PI * 2 + Date.now() * 0.0002;
-                        const nextDistance = 80 + (this.dataArray[Math.floor((nextIndex / particleCount) * this.bufferLength)] / 255) * 200;
-                        const x2 = centerX + Math.cos(nextAngle) * nextDistance;
-                        const y2 = centerY + Math.sin(nextAngle) * nextDistance;
+                    // Only draw if points are close in 3D space
+                    const distance = Math.sqrt(
+                        Math.pow(p1.x - p2.x, 2) +
+                        Math.pow(p1.y - p2.y, 2) +
+                        Math.pow(p1.z - p2.z, 2)
+                    );
+                    
+                    if (distance < radius * 0.3) {
+                        // Add slight pulsing effect
+                        const pulse = Math.sin(Date.now() * 0.005) * intensity * 3;
+                        const x1 = centerX + p1.x + pulse;
+                        const y1 = centerY + p1.y;
+                        const x2 = centerX + p2.x + pulse;
+                        const y2 = centerY + p2.y;
                         
                         this.ctx.beginPath();
                         this.ctx.moveTo(x1, y1);
                         this.ctx.lineTo(x2, y2);
                         this.ctx.stroke();
+                    }
+                }
+                
+                // Draw dots at vertices
+                for (let i = 0; i < points.length; i++) {
+                    const p = points[i];
+                    
+                    // Add wavey displacement based on local frequency
+                    const freqIndex = Math.floor((i / points.length) * this.bufferLength);
+                    const freqValue = this.dataArray[freqIndex] / 128;
+                    const wave = Math.sin(Date.now() * 0.003 + i * 0.123) * freqValue * 8;
+                    
+                    const x = centerX + p.x + wave;
+                    const y = centerY + p.y + wave * 0.3;
+                    const size = 2 + intensity * 1.5;
+                    
+                    // Glowing monochrome effect - brightness varies with frequency
+                    const baseAlpha = 0.25;
+                    const freqAlpha = 0.4 + (freqValue / 255) * 0.5;
+                    const alpha = baseAlpha + freqAlpha;
+                    
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, y, size, 0, Math.PI * 2);
+                    this.ctx.fillStyle = `rgba(190, 210, 255, ${alpha})`;
+                    this.ctx.fill();
+                    
+                    // Add glow for brighter dots
+                    if (freqValue > 80) {
+                        this.ctx.shadowColor = 'rgba(190, 210, 255, 0.95)';
+                        this.ctx.shadowBlur = 12 + (freqValue / 128) * 15;
+                        this.ctx.shadowBlur = 0;
                     }
                 }
             }
