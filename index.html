@@ -36,6 +36,30 @@
             .glow {
                 box-shadow: 0 0 15px rgba(96, 165, 250, 0.5);
             }
+            
+            /* Range input styling */
+            input[type="range"]::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                height: 16px;
+                width: 16px;
+                border-radius: 50%;
+                background: #60a5fa;
+                cursor: pointer;
+                margin-top: -4px;
+            }
+            
+            input[type="range"]::-moz-range-thumb {
+                height: 16px;
+                width: 16px;
+                border-radius: 50%;
+                background: #60a5fa;
+                cursor: pointer;
+                border: none;
+            }
+            
+            input[type="range"]::-webkit-slider-thumb:hover {
+                background: #3b82f6;
+            }
         }
     </style>
 </head>
@@ -62,6 +86,38 @@
                     </select>
                 </div>
                 
+                <!-- Waveform Settings -->
+                <div id="waveformSettings" class="hidden mb-4 space-y-3">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Wave Color</label>
+                        <div class="flex items-center space-x-2">
+                            <input type="color" id="waveColor" value="#60a5fa" class="h-8 w-8 rounded cursor-pointer border border-gray-600 bg-gray-800">
+                            <span class="text-xs text-gray-300" id="waveColorHex">#60a5fa</span>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">
+                            Line Width: <span id="lineWidthValue">2</span>px
+                        </label>
+                        <input type="range" id="lineWidth" min="1" max="10" value="2" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">
+                            Glow Intensity: <span id="glowValue">10</span>
+                        </label>
+                        <input type="range" id="glowIntensity" min="0" max="30" value="10" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">
+                            Scale: <span id="scaleValue">1.0</span>x
+                        </label>
+                        <input type="range" id="waveScale" min="0.5" max="2.0" step="0.1" value="1.0" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                </div>
+                
                 <div class="mb-4">
                     <label class="block text-sm font-medium mb-2">Audio Source</label>
                     <div class="flex items-center space-x-2">
@@ -70,6 +126,106 @@
                             <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-6"></span>
                         </button>
                         <span class="text-sm">Mic</span>
+                    </div>
+                </div>
+                
+                <!-- Spectrum Settings -->
+                <div id="spectrumSettings" class="hidden mb-4 space-y-3">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Bar Color 1</label>
+                        <div class="flex items-center space-x-2">
+                            <input type="color" id="spectrumColor1" value="#60a5fa" class="h-8 w-8 rounded cursor-pointer border border-gray-600 bg-gray-800">
+                            <span class="text-xs text-gray-300" id="spectrumColor1Hex">#60a5fa</span>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Bar Color 2</label>
+                        <div class="flex items-center space-x-2">
+                            <input type="color" id="spectrumColor2" value="#8b5cf6" class="h-8 w-8 rounded cursor-pointer border border-gray-600 bg-gray-800">
+                            <span class="text-xs text-gray-300" id="spectrumColor2Hex">#8b5cf6</span>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">
+                            Glow Intensity: <span id="spectrumGlowValue">10</span>
+                        </label>
+                        <input type="range" id="spectrumGlow" min="0" max="30" value="10" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">
+                            Bar Width Multiplier: <span id="widthValue">2.7</span>x
+                        </label>
+                        <input type="range" id="spectrumWidth" min="1" max="5" step="0.1" value="2.7" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">
+                            Gap Between Bars: <span id="gapValue">1</span>px
+                        </label>
+                        <input type="range" id="spectrumGap" min="0" max="5" value="1" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">
+                            Fill Opacity: <span id="opacityValue">1.0</span>
+                        </label>
+                        <input type="range" id="spectrumOpacity" min="0.1" max="1.0" step="0.1" value="1.0" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                </div>
+                
+                <!-- Particle Settings -->
+                <div id="particleSettings" class="hidden mb-4 space-y-3">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Sphere Color</label>
+                        <div class="flex items-center space-x-2">
+                            <input type="color" id="particleColor" value="#c2d3ff" class="h-8 w-8 rounded cursor-pointer border border-gray-600 bg-gray-800">
+                            <span class="text-xs text-gray-300" id="particleColorHex">#c2d3ff</span>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">
+                            Sphere Radius: <span id="radiusValue">100</span>px
+                        </label>
+                        <input type="range" id="particleRadius" min="50" max="200" value="100" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">
+                            Rotation Speed: <span id="rotationValue">1.0</span>x
+                        </label>
+                        <input type="range" id="particleRotation" min="0.1" max="3.0" step="0.1" value="1.0" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">
+                            Pulse Intensity: <span id="pulseValue">1.0</span>x
+                        </label>
+                        <input type="range" id="particlePulse" min="0" max="2.0" step="0.1" value="1.0" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">
+                            Dot Density: <span id="dotCountValue">14</span> rings
+                        </label>
+                        <input type="range" id="particleDensity" min="8" max="24" value="14" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">
+                            Wireframe Opacity: <span id="wireframeOpacityValue">0.5</span>
+                        </label>
+                        <input type="range" id="particleWireframeOpacity" min="0.1" max="1.0" step="0.1" value="0.5" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">
+                            Wave Amplitude: <span id="waveAmplitudeValue">1.0</span>x
+                        </label>
+                        <input type="range" id="particleWave" min="0.5" max="2.0" step="0.1" value="1.0" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
                     </div>
                 </div>
                 
@@ -111,6 +267,35 @@
                 this.animationId = null;
                 this.isSystemAudio = false; // Default to microphone
                 
+                // Waveform customization settings
+                this.waveformSettings = {
+                    color: '#60a5fa',
+                    lineWidth: 2,
+                    glowIntensity: 10,
+                    scale: 1.0
+                };
+                
+                // Spectrum customization settings
+                this.spectrumSettings = {
+                    color1: '#60a5fa',
+                    color2: '#8b5cf6',
+                    glowIntensity: 10,
+                    widthMultiplier: 2.7,
+                    gap: 1,
+                    opacity: 1.0
+                };
+                
+                // Particle customization settings
+                this.particleSettings = {
+                    color: '#c2d3ff',
+                    radius: 100,
+                    rotationSpeed: 1.0,
+                    pulseIntensity: 1.0,
+                    phiCount: 14,
+                    wireframeOpacity: 0.5,
+                    waveAmplitude: 1.0
+                };
+                
                 // Audio data buffers
                 this.dataArray = null;
                 this.timeData = null;
@@ -151,8 +336,118 @@
                 document.getElementById('startButton').addEventListener('click', () => this.toggleAudio());
                 document.getElementById('modeSelector').addEventListener('change', (e) => {
                     this.mode = e.target.value;
+                    this.updateSettingsVisibility();
                 });
                 document.getElementById('sourceToggle').addEventListener('click', () => this.toggleAudioSource());
+                
+                // Waveform settings controls
+                document.getElementById('waveColor').addEventListener('input', (e) => {
+                    this.waveformSettings.color = e.target.value;
+                    document.getElementById('waveColorHex').textContent = e.target.value;
+                });
+                
+                document.getElementById('lineWidth').addEventListener('input', (e) => {
+                    this.waveformSettings.lineWidth = parseInt(e.target.value);
+                    document.getElementById('lineWidthValue').textContent = this.waveformSettings.lineWidth;
+                });
+                
+                document.getElementById('glowIntensity').addEventListener('input', (e) => {
+                    this.waveformSettings.glowIntensity = parseInt(e.target.value);
+                    document.getElementById('glowValue').textContent = this.waveformSettings.glowIntensity;
+                });
+                
+                document.getElementById('waveScale').addEventListener('input', (e) => {
+                    this.waveformSettings.scale = parseFloat(e.target.value);
+                    document.getElementById('scaleValue').textContent = e.target.value;
+                });
+                
+                // Spectrum settings controls
+                document.getElementById('spectrumColor1').addEventListener('input', (e) => {
+                    this.spectrumSettings.color1 = e.target.value;
+                    document.getElementById('spectrumColor1Hex').textContent = e.target.value;
+                });
+                
+                document.getElementById('spectrumColor2').addEventListener('input', (e) => {
+                    this.spectrumSettings.color2 = e.target.value;
+                    document.getElementById('spectrumColor2Hex').textContent = e.target.value;
+                });
+                
+                document.getElementById('spectrumGlow').addEventListener('input', (e) => {
+                    this.spectrumSettings.glowIntensity = parseInt(e.target.value);
+                    document.getElementById('spectrumGlowValue').textContent = this.spectrumSettings.glowIntensity;
+                });
+                
+                document.getElementById('spectrumWidth').addEventListener('input', (e) => {
+                    this.spectrumSettings.widthMultiplier = parseFloat(e.target.value);
+                    document.getElementById('widthValue').textContent = e.target.value;
+                });
+                
+                document.getElementById('spectrumGap').addEventListener('input', (e) => {
+                    this.spectrumSettings.gap = parseInt(e.target.value);
+                    document.getElementById('gapValue').textContent = e.target.value;
+                });
+                
+                document.getElementById('spectrumOpacity').addEventListener('input', (e) => {
+                    this.spectrumSettings.opacity = parseFloat(e.target.value);
+                    document.getElementById('opacityValue').textContent = e.target.value;
+                });
+                
+                // Particle settings controls
+                document.getElementById('particleColor').addEventListener('input', (e) => {
+                    this.particleSettings.color = e.target.value;
+                    document.getElementById('particleColorHex').textContent = e.target.value;
+                });
+                
+                document.getElementById('particleRadius').addEventListener('input', (e) => {
+                    this.particleSettings.radius = parseInt(e.target.value);
+                    document.getElementById('radiusValue').textContent = this.particleSettings.radius;
+                });
+                
+                document.getElementById('particleRotation').addEventListener('input', (e) => {
+                    this.particleSettings.rotationSpeed = parseFloat(e.target.value);
+                    document.getElementById('rotationValue').textContent = this.particleSettings.rotationSpeed;
+                });
+                
+                document.getElementById('particlePulse').addEventListener('input', (e) => {
+                    this.particleSettings.pulseIntensity = parseFloat(e.target.value);
+                    document.getElementById('pulseValue').textContent = this.particleSettings.pulseIntensity;
+                });
+                
+                document.getElementById('particleDensity').addEventListener('input', (e) => {
+                    this.particleSettings.phiCount = parseInt(e.target.value);
+                    document.getElementById('dotCountValue').textContent = this.particleSettings.phiCount;
+                });
+                
+                document.getElementById('particleWireframeOpacity').addEventListener('input', (e) => {
+                    this.particleSettings.wireframeOpacity = parseFloat(e.target.value);
+                    document.getElementById('wireframeOpacityValue').textContent = this.particleSettings.wireframeOpacity;
+                });
+                
+                document.getElementById('particleWave').addEventListener('input', (e) => {
+                    this.particleSettings.waveAmplitude = parseFloat(e.target.value);
+                    document.getElementById('waveAmplitudeValue').textContent = this.particleSettings.waveAmplitude;
+                });
+            }
+            
+            // Update settings panel visibility based on selected mode
+            updateSettingsVisibility() {
+                const waveformSettings = document.getElementById('waveformSettings');
+                const spectrumSettings = document.getElementById('spectrumSettings');
+                const particleSettings = document.getElementById('particleSettings');
+                
+                if (this.mode === 'waveform') {
+                    waveformSettings.classList.remove('hidden');
+                    spectrumSettings.classList.add('hidden');
+                    particleSettings.classList.add('hidden');
+                } else if (this.mode === 'spectrum') {
+                    waveformSettings.classList.add('hidden');
+                    spectrumSettings.classList.remove('hidden');
+                    particleSettings.classList.add('hidden');
+                } else {
+                    waveformSettings.classList.add('hidden');
+                    spectrumSettings.classList.add('hidden');
+                    particleSettings.classList.remove('hidden');
+                }
             }
             
             // Toggle audio source between microphone and system audio
@@ -305,22 +600,34 @@
                 }
             }
             
-            // Draw waveform visualization
+            // Draw waveform visualization with scrolling animation
             drawWaveform() {
                 // Get time domain data
                 this.analyser.getByteTimeDomainData(this.timeData);
                 
-                // Draw waveform
+                // Get waveform settings
+                const settings = this.waveformSettings;
+                
+                // Clear with fade effect for trail
+                this.ctx.fillStyle = 'rgba(10, 10, 10, 0.1)';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw scrolling waveform
                 this.ctx.beginPath();
-                this.ctx.lineWidth = 2;
-                this.ctx.strokeStyle = '#60a5fa';
+                this.ctx.lineWidth = settings.lineWidth;
+                this.ctx.strokeStyle = settings.color;
+                this.ctx.lineCap = 'round';
+                this.ctx.lineJoin = 'round';
                 
                 const sliceWidth = this.canvas.width / this.timeData.length;
                 let x = 0;
                 
                 for (let i = 0; i < this.timeData.length; i++) {
                     const v = this.timeData[i] / 128.0;
-                    const y = v * this.canvas.height / 2;
+                    // Keep wave centered with audio-reactive amplitude
+                    const centerY = this.canvas.height / 2;
+                    const amplitude = (this.canvas.height / 2) * settings.scale * 0.8;
+                    const y = centerY + (v - 1) * amplitude;
                     
                     if (i === 0) {
                         this.ctx.moveTo(x, y);
@@ -334,38 +641,45 @@
                 this.ctx.stroke();
                 
                 // Add glow effect
-                this.ctx.shadowColor = '#60a5fa';
-                this.ctx.shadowBlur = 10;
+                this.ctx.shadowColor = settings.color;
+                this.ctx.shadowBlur = settings.glowIntensity;
                 this.ctx.stroke();
                 this.ctx.shadowBlur = 0;
             }
             
-            // Draw spectrum visualization
+            // Draw spectrum visualization with customizable bars
             drawSpectrum() {
+                // Get spectrum settings
+                const settings = this.spectrumSettings;
+                
                 // Draw bars
-                const barWidth = (this.canvas.width / this.bufferLength) * 2.7;
+                const barWidth = (this.canvas.width / this.bufferLength) * settings.widthMultiplier;
                 let barHeight;
                 let x = 0;
                 
                 for (let i = 0; i < this.bufferLength; i++) {
+                    // Calculate bar height from audio data (not affected by opacity)
                     barHeight = this.dataArray[i] / 255 * this.canvas.height;
                     
                     // Create gradient
                     const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
-                    gradient.addColorStop(0, '#60a5fa');
-                    gradient.addColorStop(1, '#8b5cf6');
+                    gradient.addColorStop(0, settings.color1);
+                    gradient.addColorStop(1, settings.color2);
                     
+                    this.ctx.globalAlpha = settings.opacity;
                     this.ctx.fillStyle = gradient;
                     this.ctx.fillRect(x, this.canvas.height - barHeight, barWidth, barHeight);
                     
                     // Add glow effect
-                    this.ctx.shadowColor = '#8b5cf6';
-                    this.ctx.shadowBlur = 10;
+                    this.ctx.shadowColor = settings.color1;
+                    this.ctx.shadowBlur = settings.glowIntensity;
                     this.ctx.fillRect(x, this.canvas.height - barHeight, barWidth, barHeight);
                     this.ctx.shadowBlur = 0;
                     
-                    x += barWidth + 1;
+                    x += barWidth + settings.gap;
                 }
+                
+                this.ctx.globalAlpha = 1.0;
             }
             
             // Draw particle visualization with audio-reactive 3D wireframe sphere
@@ -382,18 +696,25 @@
                 const average = sum / this.dataArray.length;
                 const intensity = average / 255;
                 
+                // Get particle settings
+                const settings = this.particleSettings;
+                
                 // Base size for the sphere (medium)
                 const centerX = this.canvas.width / 2;
                 const centerY = this.canvas.height / 2;
-                let radius = 100; // Base radius, modified below
+                let radius = settings.radius;
                 radius += intensity * 40; // Subtle pulse
                 
+                // Apply pulse intensity
+                const pulse = Math.sin(Date.now() * 0.005) * intensity * settings.pulseIntensity * 10;
+                radius += pulse;
+                
                 // Generate phi and theta values for sphere with rotation
-                const phiCount = 14; // Vertical rings
-                const thetaCount = 22; // Horizontal dots per ring
+                const phiCount = settings.phiCount; // Vertical rings
+                const thetaCount = 22; // Horizontal dots per ring (fixed)
                 const points = [];
-                const rotationX = Date.now() * 0.0003; // Continuous rotation on X axis
-                const rotationY = Date.now() * 0.0002; // Continuous rotation on Y axis
+                const rotationX = Date.now() * 0.0003 * settings.rotationSpeed; // Continuous rotation on X axis
+                const rotationY = Date.now() * 0.0002 * settings.rotationSpeed; // Continuous rotation on Y axis
                 
                 for (let i = 0; i < phiCount; i++) {
                     for (let j = 0; j < thetaCount; j++) {
@@ -420,7 +741,7 @@
                         // Add frequency-based wavey displacement
                         const freqIndex = Math.floor((j / thetaCount) * this.bufferLength);
                         const freqValue = this.dataArray[freqIndex] / 128;
-                        const waveAmount = Math.sin(Date.now() * 0.002 + i * 0.5 + j * 0.3) * freqValue * 5;
+                        const waveAmount = Math.sin(Date.now() * 0.002 + i * 0.5 + j * 0.3) * freqValue * settings.waveAmplitude;
                         
                         x1 += waveAmount;
                         y2 += waveAmount * 0.5;
@@ -433,7 +754,7 @@
                 points.sort((a, b) => b.z - a.z);
                 
                 // Draw connecting lines (wireframe)
-                this.ctx.strokeStyle = `rgba(180, 200, 255, ${0.1 + intensity * 0.3})`;
+                this.ctx.strokeStyle = `rgba(180, 200, 255, ${settings.wireframeOpacity * (0.1 + intensity * 0.3)})`;
                 this.ctx.lineWidth = 1;
                 
                 for (let i = 0; i < points.length - 1; i++) {
@@ -498,6 +819,80 @@
         // Initialize visualizer when page loads
         document.addEventListener('DOMContentLoaded', () => {
             const visualizer = new Visualizer();
+            
+            // Initialize waveform settings controls
+            const waveColor = document.getElementById('waveColor');
+            waveColor.value = visualizer.waveformSettings.color;
+            document.getElementById('waveColorHex').textContent = visualizer.waveformSettings.color;
+            
+            const lineWidth = document.getElementById('lineWidth');
+            lineWidth.value = visualizer.waveformSettings.lineWidth;
+            document.getElementById('lineWidthValue').textContent = visualizer.waveformSettings.lineWidth;
+            
+            const glowIntensity = document.getElementById('glowIntensity');
+            glowIntensity.value = visualizer.waveformSettings.glowIntensity;
+            document.getElementById('glowValue').textContent = visualizer.waveformSettings.glowIntensity;
+            
+            const waveScale = document.getElementById('waveScale');
+            waveScale.value = visualizer.waveformSettings.scale;
+            document.getElementById('scaleValue').textContent = visualizer.waveformSettings.scale;
+            
+            // Initialize spectrum settings controls
+            const spectrumColor1 = document.getElementById('spectrumColor1');
+            spectrumColor1.value = visualizer.spectrumSettings.color1;
+            document.getElementById('spectrumColor1Hex').textContent = visualizer.spectrumSettings.color1;
+            
+            const spectrumColor2 = document.getElementById('spectrumColor2');
+            spectrumColor2.value = visualizer.spectrumSettings.color2;
+            document.getElementById('spectrumColor2Hex').textContent = visualizer.spectrumSettings.color2;
+            
+            const spectrumGlow = document.getElementById('spectrumGlow');
+            spectrumGlow.value = visualizer.spectrumSettings.glowIntensity;
+            document.getElementById('spectrumGlowValue').textContent = visualizer.spectrumSettings.glowIntensity;
+            
+            const spectrumWidth = document.getElementById('spectrumWidth');
+            spectrumWidth.value = visualizer.spectrumSettings.widthMultiplier;
+            document.getElementById('widthValue').textContent = visualizer.spectrumSettings.widthMultiplier;
+            
+            const spectrumGap = document.getElementById('spectrumGap');
+            spectrumGap.value = visualizer.spectrumSettings.gap;
+            document.getElementById('gapValue').textContent = visualizer.spectrumSettings.gap;
+            
+            const spectrumOpacity = document.getElementById('spectrumOpacity');
+            spectrumOpacity.value = visualizer.spectrumSettings.opacity;
+            document.getElementById('opacityValue').textContent = visualizer.spectrumSettings.opacity;
+            
+            // Initialize particle settings controls
+            const particleColor = document.getElementById('particleColor');
+            particleColor.value = visualizer.particleSettings.color;
+            document.getElementById('particleColorHex').textContent = visualizer.particleSettings.color;
+            
+            const particleRadius = document.getElementById('particleRadius');
+            particleRadius.value = visualizer.particleSettings.radius;
+            document.getElementById('radiusValue').textContent = visualizer.particleSettings.radius;
+            
+            const particleRotation = document.getElementById('particleRotation');
+            particleRotation.value = visualizer.particleSettings.rotationSpeed;
+            document.getElementById('rotationValue').textContent = visualizer.particleSettings.rotationSpeed;
+            
+            const particlePulse = document.getElementById('particlePulse');
+            particlePulse.value = visualizer.particleSettings.pulseIntensity;
+            document.getElementById('pulseValue').textContent = visualizer.particleSettings.pulseIntensity;
+            
+            const particleDensity = document.getElementById('particleDensity');
+            particleDensity.value = visualizer.particleSettings.phiCount;
+            document.getElementById('dotCountValue').textContent = visualizer.particleSettings.phiCount;
+            
+            const particleWireframeOpacity = document.getElementById('particleWireframeOpacity');
+            particleWireframeOpacity.value = visualizer.particleSettings.wireframeOpacity;
+            document.getElementById('wireframeOpacityValue').textContent = visualizer.particleSettings.wireframeOpacity;
+            
+            const particleWave = document.getElementById('particleWave');
+            particleWave.value = visualizer.particleSettings.waveAmplitude;
+            document.getElementById('waveAmplitudeValue').textContent = visualizer.particleSettings.waveAmplitude;
+            
+            // Show waveform settings initially
+            visualizer.updateSettingsVisibility();
         });
     </script>
 </body>
