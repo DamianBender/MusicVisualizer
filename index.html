@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Audio Visualizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            900: '#0a0a0a',
+                            800: '#1a1a1a',
+                            700: '#2a2a2a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .glass {
+                background: rgba(255, 255, 255, 0.05);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+            
+            .glass-border {
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+            
+            .glow {
+                box-shadow: 0 0 15px rgba(96, 165, 250, 0.5);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center justify-center p-4">
+    <div class="w-full">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 mb-2">
+                Audio Visualizer
+            </h1>
+            <p class="text-gray-400">Experience sound in real-time with beautiful visualizations</p>
+        </header>
+        
+        <div class="relative w-full h-[700px] rounded-2xl overflow-hidden glass-border">
+            <canvas id="visualizer" class="w-full h-full"></canvas>
+            
+            <!-- Overlay Controls -->
+            <div class="absolute top-4 right-4 glass rounded-xl p-4 w-64">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Visualization Mode</label>
+                    <select id="modeSelector" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="waveform">Waveform</option>
+                        <option value="spectrum">Spectrum</option>
+                        <option value="particle">Particle</option>
+                    </select>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Audio Source</label>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm">System</span>
+                        <button id="sourceToggle" class="relative inline-flex h-6 w-11 items-center rounded-full bg-blue-500 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                            <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-6"></span>
+                        </button>
+                        <span class="text-sm">Mic</span>
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <button id="startButton" class="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg font-medium hover:opacity-90 transition-all transform hover:scale-105">
+                        Start Listening
+                    </button>
+                    <div id="statusIndicator" class="w-3 h-3 rounded-full bg-red-500"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-8 text-center text-gray-400">
+            <p>Click "Start Listening" to begin visualizing audio</p>
+        </div>
+    </div>
+
+    <script>
+        // Main Visualizer Class
+        class Visualizer {
+            constructor() {
+                // Check browser compatibility
+                this.checkBrowserCompatibility();
+                
+                // Canvas setup
+                this.canvas = document.getElementById('visualizer');
+                this.ctx = this.canvas.getContext('2d');
+                this.resizeCanvas();
+                
+                // Audio context and analyser
+                this.audioContext = null;
+                this.analyser = null;
+                this.source = null;
+                this.mediaStream = null;
+                this.systemAudioSource = null;
+                
+                // Visualization settings
+                this.mode = 'waveform';
+                this.animationId = null;
+                this.isSystemAudio = false; // Default to microphone
+                
+                // Audio data buffers
+                this.dataArray = null;
+                this.timeData = null;
+                this.bufferLength = 0;
+                
+                // Event listeners
+                this.setupEventListeners();
+                
+                // Handle window resize
+                window.addEventListener('resize', () => this.resizeCanvas());
+            }
+            
+            // Check browser compatibility
+            checkBrowserCompatibility() {
+                const compatibilityMessage = document.querySelector('.browser-compatibility-message');
+                
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    console.warn("Audio API not supported in this browser");
+                    if (compatibilityMessage) {
+                        compatibilityMessage.textContent = "Warning: Audio API not supported in this browser";
+                    }
+                }
+                
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+                    console.warn("getDisplayMedia not supported - system audio capture unavailable");
+                    // This is expected for many browsers
+                }
+            }
+            
+            // Resize canvas to fit container
+            resizeCanvas() {
+                this.canvas.width = this.canvas.clientWidth;
+                this.canvas.height = this.canvas.clientHeight;
+            }
+            
+            // Setup event listeners
+            setupEventListeners() {
+                document.getElementById('startButton').addEventListener('click', () => this.toggleAudio());
+                document.getElementById('modeSelector').addEventListener('change', (e) => {
+                    this.mode = e.target.value;
+                });
+                document.getElementById('sourceToggle').addEventListener('click', () => this.toggleAudioSource());
+            }
+            
+            // Toggle audio source between microphone and system audio
+            toggleAudioSource() {
+                this.isSystemAudio = !this.isSystemAudio;
+                const toggle = document.getElementById('sourceToggle');
+                
+                // Update toggle button appearance
+                if (this.isSystemAudio) {
+                    toggle.classList.add('bg-purple-500');
+                    toggle.classList.remove('bg-blue-500');
+                    toggle.querySelector('span').classList.remove('translate-x-6');
+                    toggle.querySelector('span').classList.add('translate-x-1');
+                } else {
+                    toggle.classList.add('bg-blue-500');
+                    toggle.classList.remove('bg-purple-500');
+                    toggle.querySelector('span').classList.remove('translate-x-1');
+                    toggle.querySelector('span').classList.add('translate-x-6');
+                }
+                
+                // If audio is currently active, restart with new source
+                if (this.audioContext) {
+                    this.stopAudio();
+                    this.startAudio();
+                }
+            }
+            
+            // Toggle audio input
+            async toggleAudio() {
+                const button = document.getElementById('startButton');
+                const indicator = document.getElementById('statusIndicator');
+                
+                if (this.audioContext) {
+                    // Stop audio
+                    this.stopAudio();
+                    button.textContent = 'Start Listening';
+                    indicator.className = 'w-3 h-3 rounded-full bg-red-500';
+                } else {
+                    // Start audio
+                    try {
+                        await this.startAudio();
+                        button.textContent = 'Stop Listening';
+                        indicator.className = 'w-3 h-3 rounded-full bg-green-500';
+                    } catch (err) {
+                        console.error('Error accessing audio:', err);
+                        button.textContent = 'Error - Try Again';
+                        indicator.className = 'w-3 h-3 rounded-full bg-red-500';
+                        
+                        // Show a more user-friendly message
+                        alert("Audio access error: " + err.message + "\n\n" +
+                               "This might be due to browser restrictions or lack of permissions.\n\n" +
+                               "Try using microphone mode instead, or check your browser settings.");
+                    }
+                }
+            }
+            
+            // Start audio input
+            async startAudio() {
+                // Create audio context
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                this.analyser = this.audioContext.createAnalyser();
+                this.analyser.fftSize = 256;
+                
+                // Get buffer length
+                this.bufferLength = this.analyser.frequencyBinCount;
+                this.dataArray = new Uint8Array(this.bufferLength);
+                this.timeData = new Uint8Array(this.bufferLength);
+                
+                try {
+                    if (this.isSystemAudio) {
+                        try {
+                            // Try to capture system audio using getDisplayMedia
+                            const stream = await navigator.mediaDevices.getDisplayMedia({
+                                video: true,
+                                audio: true
+                            });
+                            
+                            // Create audio source from the stream
+                            this.source = this.audioContext.createMediaStreamSource(stream);
+                            console.log("System audio capture successful");
+                        } catch (error) {
+                            console.warn("System audio capture failed, falling back to microphone:", error);
+                            // If system audio fails, fall back to microphone
+                            this.isSystemAudio = false;
+                            this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                            this.source = this.audioContext.createMediaStreamSource(this.mediaStream);
+                        }
+                    } else {
+                        // Microphone capture (existing code)
+                        this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        this.source = this.audioContext.createMediaStreamSource(this.mediaStream);
+                    }
+                    
+                    this.source.connect(this.analyser);
+                    
+                    // Start visualization
+                    this.animate();
+                } catch (err) {
+                    console.error('Error creating audio source:', err);
+                    throw err;
+                }
+            }
+            
+            // Check if system audio is supported
+            isSystemAudioSupported() {
+                // Check for required APIs
+                return !!(navigator.mediaDevices && 
+                             navigator.mediaDevices.getDisplayMedia && 
+                             navigator.mediaDevices.getUserMedia);
+            }
+            
+            // Stop audio input
+            stopAudio() {
+                if (this.mediaStream) {
+                    this.mediaStream.getTracks().forEach(track => track.stop());
+                }
+                
+                if (this.audioContext) {
+                    this.audioContext.close();
+                }
+                
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                }
+                
+                this.audioContext = null;
+                this.analyser = null;
+                this.source = null;
+                this.mediaStream = null;
+                this.systemAudioSource = null;
+            }
+            
+            // Main animation loop
+            animate() {
+                this.animationId = requestAnimationFrame(() => this.animate());
+                
+                // Clear canvas
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Get frequency data
+                this.analyser.getByteFrequencyData(this.dataArray);
+                
+                // Draw based on mode
+                if (this.mode === 'waveform') {
+                    this.drawWaveform();
+                } else if (this.mode === 'spectrum') {
+                    this.drawSpectrum();
+                } else if (this.mode === 'particle') {
+                    this.drawParticle();
+                }
+            }
+            
+            // Draw waveform visualization
+            drawWaveform() {
+                // Get time domain data
+                this.analyser.getByteTimeDomainData(this.timeData);
+                
+                // Draw waveform
+                this.ctx.beginPath();
+                this.ctx.lineWidth = 2;
+                this.ctx.strokeStyle = '#60a5fa';
+                
+                const sliceWidth = this.canvas.width / this.timeData.length;
+                let x = 0;
+                
+                for (let i = 0; i < this.timeData.length; i++) {
+                    const v = this.timeData[i] / 128.0;
+                    const y = v * this.canvas.height / 2;
+                    
+                    if (i === 0) {
+                        this.ctx.moveTo(x, y);
+                    } else {
+                        this.ctx.lineTo(x, y);
+                    }
+                    
+                    x += sliceWidth;
+                }
+                
+                this.ctx.stroke();
+                
+                // Add glow effect
+                this.ctx.shadowColor = '#60a5fa';
+                this.ctx.shadowBlur = 10;
+                this.ctx.stroke();
+                this.ctx.shadowBlur = 0;
+            }
+            
+            // Draw spectrum visualization
+            drawSpectrum() {
+                // Draw bars
+                const barWidth = (this.canvas.width / this.bufferLength) * 2.7;
+                let barHeight;
+                let x = 0;
+                
+                for (let i = 0; i < this.bufferLength; i++) {
+                    barHeight = this.dataArray[i] / 255 * this.canvas.height;
+                    
+                    // Create gradient
+                    const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+                    gradient.addColorStop(0, '#60a5fa');
+                    gradient.addColorStop(1, '#8b5cf6');
+                    
+                    this.ctx.fillStyle = gradient;
+                    this.ctx.fillRect(x, this.canvas.height - barHeight, barWidth, barHeight);
+                    
+                    // Add glow effect
+                    this.ctx.shadowColor = '#8b5cf6';
+                    this.ctx.shadowBlur = 10;
+                    this.ctx.fillRect(x, this.canvas.height - barHeight, barWidth, barHeight);
+                    this.ctx.shadowBlur = 0;
+                    
+                    x += barWidth + 1;
+                }
+            }
+            
+            // Draw particle visualization with audio-reactive particles
+            drawParticle() {
+                // Clear canvas with space-like background
+                this.ctx.fillStyle = 'rgba(2, 2, 12, 0.1)';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Create a subtle gradient background
+                const bgGradient = this.ctx.createLinearGradient(0, 0, this.canvas.width, this.canvas.height);
+                bgGradient.addColorStop(0, 'rgba(10, 10, 30, 0.1)');
+                bgGradient.addColorStop(1, 'rgba(5, 5, 15, 0.1)');
+                this.ctx.fillStyle = bgGradient;
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Get average audio intensity for overall effect
+                let sum = 0;
+                for (let i = 0; i < this.dataArray.length; i++) {
+                    sum += this.dataArray[i];
+                }
+                const average = sum / this.dataArray.length;
+                const intensity = average / 255;
+                
+                // Draw central core that reacts to audio
+                const centerX = this.canvas.width / 2;
+                const centerY = this.canvas.height / 2;
+                const coreSize = 30 + intensity * 80;
+                
+                // Create radial gradient for core
+                const coreGradient = this.ctx.createRadialGradient(
+                    centerX, centerY, 0,
+                    centerX, centerY, coreSize
+                );
+                coreGradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+                coreGradient.addColorStop(0.3, 'rgba(100, 200, 255, 0.7)');
+                coreGradient.addColorStop(1, 'rgba(50, 100, 255, 0.3)');
+                
+                this.ctx.beginPath();
+                this.ctx.arc(centerX, centerY, coreSize, 0, Math.PI * 2);
+                this.ctx.fillStyle = coreGradient;
+                this.ctx.fill();
+                
+                // Add core glow
+                this.ctx.shadowColor = 'rgba(100, 200, 255, 0.8)';
+                this.ctx.shadowBlur = 20;
+                this.ctx.fill();
+                this.ctx.shadowBlur = 0;
+                
+                // Draw audio-reactive particles
+                const particleCount = 100 + Math.floor(intensity * 200);
+                const baseSize = 1 + intensity * 3;
+                
+                for (let i = 0; i < particleCount; i++) {
+                    // Calculate particle position based on audio data
+                    const audioIndex = Math.floor((i / particleCount) * this.bufferLength);
+                    const audioValue = this.dataArray[audioIndex] / 255;
+                    
+                    // Position particles in a circular formation around the center
+                    const angle = (i / particleCount) * Math.PI * 2 + Date.now() * 0.0002;
+                    const distance = 80 + audioValue * 200;
+					const x = centerX + Math.cos(angle) * distance;
+                    const y = centerY + Math.sin(angle) * distance;
+                    
+                    // Calculate particle size and color based on audio
+                    const size = baseSize + audioValue * 5;
+                    const hue = (Date.now() * 0.05 + i * 10) % 360;
+                    const saturation = 70 + audioValue * 30;
+                    const lightness = 60 + audioValue * 20;
+                    
+                    // Draw particle with glow effect
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, y, size, 0, Math.PI * 2);
+                    
+                    const particleGradient = this.ctx.createRadialGradient(
+                        x - size/3, y - size/3, 0,
+                        x, y, size
+                    );
+                    particleGradient.addColorStop(0, `hsla(${hue}, ${saturation}%, ${lightness + 10}%, 0.9)`);
+                    particleGradient.addColorStop(1, `hsla(${hue}, ${saturation}%, ${lightness}%, 0)`);
+                    
+                    this.ctx.fillStyle = particleGradient;
+                    this.ctx.fill();
+                    
+                    // Add glow effect for louder particles
+                    if (audioValue > 0.5) {
+                        this.ctx.shadowColor = `hsla(${hue}, ${saturation}%, ${lightness}%, 0.8)`;
+                        this.ctx.shadowBlur = 10 + audioValue * 15;
+                        this.ctx.fill();
+                        this.ctx.shadowBlur = 0;
+                    }
+                }
+                
+                // Draw connecting lines between particles
+                this.ctx.strokeStyle = `rgba(100, 200, 255, ${0.1 + intensity * 0.2})`;
+                this.ctx.lineWidth = 0.5;
+                
+                for (let i = 0; i < particleCount; i++) {
+                    const audioIndex = Math.floor((i / particleCount) * this.bufferLength);
+                    const audioValue = this.dataArray[audioIndex] / 255;
+                    
+                    if (audioValue > 0.1) { // Only connect if there's some audio
+                        const angle = (i / particleCount) * Math.PI * 2 + Date.now() * 0.0002;
+                        const distance = 80 + audioValue * 200;
+						const x1 = centerX + Math.cos(angle) * distance;
+                        const y1 = centerY + Math.sin(angle) * distance;
+                        
+                        // Connect to next particle
+                        const nextIndex = (i + 1) % particleCount;
+                        const nextAngle = (nextIndex / particleCount) * Math.PI * 2 + Date.now() * 0.0002;
+                        const nextDistance = 80 + (this.dataArray[Math.floor((nextIndex / particleCount) * this.bufferLength)] / 255) * 200;
+                        const x2 = centerX + Math.cos(nextAngle) * nextDistance;
+                        const y2 = centerY + Math.sin(nextAngle) * nextDistance;
+                        
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(x1, y1);
+                        this.ctx.lineTo(x2, y2);
+                        this.ctx.stroke();
+                    }
+                }
+            }
+        }
+        
+        // Initialize visualizer when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            const visualizer = new Visualizer();
+        });
+    </script>
+</body>
+</html>
